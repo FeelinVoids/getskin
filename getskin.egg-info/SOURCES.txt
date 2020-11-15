@@ -1,8 +1,0 @@
-README.md
-setup.py
-getskin.egg-info/PKG-INFO
-getskin.egg-info/SOURCES.txt
-getskin.egg-info/dependency_links.txt
-getskin.egg-info/requires.txt
-getskin.egg-info/top_level.txt
-test/test.py

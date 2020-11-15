@@ -1,23 +1,36 @@
+import os
+
 import setuptools
 
 with open("README.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+    readme = fh.read()
+
+path = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                    "getskin", "__version__.py")
+
+data = {}
+with open(path, "r", encoding="utf-8") as f:
+    exec(f.read(), data)
 
 setuptools.setup(
-    name="getskin",
-    version="1.0.0",
-    author="FeelinVoids_",
-    author_email="felucca24@gmail.com",
-    description="Python module for getting Minecraft skins information",
-    long_description=long_description,
+    name=data["__title__"],
+    version=data["__version__"],
+    author=data["__author__"],
+    author_email=data["__author_email__"],
+    description=data["__description__"],
+    long_description=readme,
     long_description_content_type="text/markdown",
-    url="https://github.com/FeelinVoids/getskin",
+    url=data["__url__"],
     packages=setuptools.find_packages(),
-    install_requires=["requests"],
+    install_requires=data["__install_requires__"],
+    entry_points={
+        "console_scripts": ["getskin=getskin.__main__:main"],
+    },
+    license=data["__license__"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.6',
+    python_requires=">=3.6",
 )

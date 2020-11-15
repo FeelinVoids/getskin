@@ -27,7 +27,6 @@ print(
     list(skin.get_numerical_uuid()),
     skin.get_hyphenated_uuid(),
 
-
     # Возвращает имя пользователя
     skin.get_name(),
 
@@ -54,4 +53,4 @@ print(
 file.close()
 sys.stdout = default_stdout
 
-print("Result:", path)
+print("Test result:", path)

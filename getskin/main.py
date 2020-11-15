@@ -159,7 +159,18 @@ class Skin:
 
     def give_head(self, to: str = "@p",
                   minecraft_version: str = "1.16") -> str:
-        """ Генерирует """
+        """ Генерирует команду /give для получения головы со скином.
+
+            `to` - Кому выдавать голову, по умолчанию `"@p"`
+
+            `minecraft_version` - версия Minecraft, от неё зависит 
+            команда.  
+            Форматы команд разные в версиях:
+                1.9 - 1.12
+                1.13 - 1.15
+                1.16 - ... 
+
+            По умолчанию `"1.16"`"""
         if minecraft_version.startswith("1.16"):
             return template_116.format(
                 to=to,

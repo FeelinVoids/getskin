@@ -1,77 +1,96 @@
 # getskin
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/FeelinVoids_/getskin)
 
-Модуль Python, позволяющий работать с информацией о скине игрока Minecraft.  
+Позволяет получать информацию о скинах игроков Minecraft:
+- Имя
+- UUID
+- base64
+- URL png картинки
+- /give команда для получения головы со скином
 
-Позволяет по нику/UUID получить UUID/ник, ссылку, скачать скин,
-получить его base64 и выдать голову со скином.
+Можно работать как с модулем Python, так и через команды в консоли.
 
-Модуль можно как подключить в Python, так и работать через консольные команды.
+![](https://i.imgur.com/qPk9fr3.png)
 
 ## Установка
 
-    
+    python -m pip install git+https://github.com/FeelinVoids/getskin.git
 
-## Использование
+## Использование в Python
 
-Пример использования модуля с демонстрацией всех методов можно найти в [test.py](./test/test.py).
+Пример использования модуля в Python с демонстрацией всех
+методов можно найти в [test.py](./test/test.py).
 
-Результат его выполнения: [test.txt](./test/test.txt) и [скачанный в результате выполнения скин](./test/Notch.png).
+Результаты выполнения теста: [test.txt](./test/).
 
 ## Консольные команды
 
-Модуль можно вызвать с аргументами `--info`, `--download`, `--head` и `--hash`.
-После первого аргумента должен быть ник или UUID, а далее - в зависимости от
-команды.
+- [Самый простой способ](#simple)
+- [info](#info)
+- [download](#download)
+- [head](#head)
+- [base64](#base64)
 
-### --info (--i)
-Выводит имя, UUID и ссылку на скин.
+### Самый простой способ<a name="simple"></a>
+Для получения всей информации о скине, достаточно выполнить следующую команду:
 
-    python -m getskin --info <ник или UUID>
-    python -m getskin --info Notch
-    python -m getskin --i Notch
+    getskin Notch
 
-Результат:
+Команда выведет имя пользователя, UUID, URL скина, base64, а также команды
+`/give` на получение головы со скином.
 
-    Username: Notch
-    UUID: 069a79f444e94726a5befca90e38aaf5
-    Skin URL: http://textures.minecraft.net/texture/292009a4925b58f02c77dadc3ecef07ea4c7472f64e0fdc32ce5522489362680
+Также доступен режим работы с аргументами:
 
-### --download (--d)
-Скачивает скин по пути `--path` (`--p`)
+### --info (--i)<a name="info"></a>
+Выводит всю информацию о скине. Эквивалентно просто `getskin <имя/UUID>`.
+
+Примеры:
+
+    getskin --info Notch
+    getskin --i Notch
+
+Результат был на скриншоте выше.
+
+### --download (--d)<a name="download"></a>
+Скачивает скин по пути `--path` (`--p`) (может быть как путём в папку, так и непосредственно в файл).
+
 Если оставить параметр пути пустым, скин будет скачан в текущую
 рабочую директорию.
 
-В консоль будет напечатан итоговый путь.
+Возвращает итоговый путь. Примеры:
 
-    python -m getskin --download <ник или UUID> --path <путь>
-    python -m getskin --download Notch --path /home/
-    python -m getskin --d Notch --path /home/
+    getskin --download Notch --path /home/
+    # Или
+    getskin --d Notch --path /home/
 
-### --head (--d)
+### --head (--d)<a name="head"></a>
 Генерирует команду получения головы со скином.  
 
 Параметр `--version` (`--v`) - версия майнкрафта. Может быть от `1.8` до `1.16`.
-Метод получения голов с `1.8` до `1.13` одинаков.  
-По умолчанию - `1.16`.
+Способы получения голов разные в версиях:
+- 1.8 - 1.12
+- 1.13 - 1.15
+- 1.16 - ... 
 
 Параметр `--selector` (`--s`) - Кому выдавать голову.  
 По умолчанию - `@p`.
 
-    python -m getskin --head <ник или UUID> --selector <версия>
-    python -m getskin --head Notch --selector @p --version 1.16
-    python -m getskin --h Notch --s @p --v 1.16
+    getskin --head Notch --selector @p --version 1.16
+    # Или
+    getskin --h Notch --s @p --v 1.16
 
 Результат:
 
     /give @p minecraft:player_head{display:{Name:"{\"text\":\"Notch\"}"}, SkullOwner:{Id:[I;110787060,1156138790,-1514210135,238594805],Properties:{textures:[{Value:"eyJ0ZXh0dXJlcyI6IHsiU0tJTiI6IHsidXJsIjogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjkyMDA5YTQ5MjViNThmMDJjNzdkYWRjM2VjZWYwN2VhNGM3NDcyZjY0ZTBmZGMzMmNlNTUyMjQ4OTM2MjY4MCJ9fX0="}]}}} 1
 
 
-### --hash
+### --base64<a name="base64"></a>
 Выводит хеш base64 данных скина.  
-(Такой используется в получении голов и установке блоков)
+(Используется при получении голов, установке блоков и в конфигах плагинов для сервера)
 
-    python -m getskin --hash <ник или UUID>
-    python -m getskin --hash Notch
+    getskin --base64 Notch
+    # Или
+    getskin --b Notch
 
 Результат:
 

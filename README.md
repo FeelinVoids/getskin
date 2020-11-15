@@ -19,9 +19,7 @@
 ## Использование в Python
 
 Пример использования модуля в Python с демонстрацией всех
-методов можно найти в [test.py](./test/test.py).
-
-Результаты выполнения теста: [test.txt](./test/).
+методов можно найти в [test.py](./getskin/test/test.py).
 
 ## Консольные команды
 
@@ -30,10 +28,13 @@
 - [download](#download)
 - [head](#head)
 - [base64](#base64)
+- [Версия getskin](#version)
 
 ### Самый простой способ<a name="simple"></a>
 Для получения всей информации о скине, достаточно выполнить следующую команду:
 
+    getskin <имя/UUID>
+    # Например
     getskin Notch
 
 Команда выведет имя пользователя, UUID, URL скина, base64, а также команды
@@ -66,25 +67,25 @@
 ### --head (--d)<a name="head"></a>
 Генерирует команду получения головы со скином.  
 
-Параметр `--version` (`--v`) - версия майнкрафта. Может быть от `1.8` до `1.16`.
+Параметр `--mc` - версия майнкрафта. Может быть от `1.8` до `1.16`.
 Способы получения голов разные в версиях:
 - 1.8 - 1.12
 - 1.13 - 1.15
 - 1.16 - ... 
 
-Параметр `--selector` (`--s`) - Кому выдавать голову.  
+Параметр `--selector` (`--s`) - кому выдавать голову.  
 По умолчанию - `@p`.
 
-    getskin --head Notch --selector @p --version 1.16
+    getskin --head Notch --selector @p --mc 1.16
     # Или
-    getskin --h Notch --s @p --v 1.16
+    getskin --h Notch --s @p --mc 1.16
 
 Результат:
 
     /give @p minecraft:player_head{display:{Name:"{\"text\":\"Notch\"}"}, SkullOwner:{Id:[I;110787060,1156138790,-1514210135,238594805],Properties:{textures:[{Value:"eyJ0ZXh0dXJlcyI6IHsiU0tJTiI6IHsidXJsIjogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjkyMDA5YTQ5MjViNThmMDJjNzdkYWRjM2VjZWYwN2VhNGM3NDcyZjY0ZTBmZGMzMmNlNTUyMjQ4OTM2MjY4MCJ9fX0="}]}}} 1
 
 
-### --base64<a name="base64"></a>
+### --base64 (--b)<a name="base64"></a>
 Выводит хеш base64 данных скина.  
 (Используется при получении голов, установке блоков и в конфигах плагинов для сервера)
 
@@ -95,3 +96,9 @@
 Результат:
 
     eyJ0ZXh0dXJlcyI6IHsiU0tJTiI6IHsidXJsIjogImh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMjkyMDA5YTQ5MjViNThmMDJjNzdkYWRjM2VjZWYwN2VhNGM3NDcyZjY0ZTBmZGMzMmNlNTUyMjQ4OTM2MjY4MCJ9fX0=
+
+
+### --version (--v)<a name="version"></a>
+Возвращает версию getskin.
+
+    getskin --version

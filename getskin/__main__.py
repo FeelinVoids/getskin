@@ -1,7 +1,8 @@
+import argparse
 import os
 import sys
-import argparse
 
+from getskin.__version__ import __version__
 from getskin.main import Skin
 
 parser = argparse.ArgumentParser(
@@ -25,9 +26,11 @@ group.add_argument("--info", "--i", help="Get username, UUID and skin URL")
 group.add_argument("--head", "--h", help="Get /give command of head with skin")
 group.add_argument("--download", "--d", help="Download the skin")
 group.add_argument("--base64", "--b", help="Get base64 hash of skin")
+group.add_argument("--version", "--v", help="Get version of getskin",
+                   action="store_true")
 
 parser.add_argument("--selector", "--s", required=False, default="@p")
-parser.add_argument("--version", "--v", required=False, default="1.16")
+parser.add_argument("--mc", required=False, default="1.16")
 parser.add_argument("--path", "--p", required=False, default=os.getcwd())
 
 
@@ -54,11 +57,13 @@ def main():
     if args.info is not None:
         _print_info(args.info)
     elif args.head is not None:
-        print(Skin(args.head).give_head(args.selector, args.version))
+        print(Skin(args.head).give_head(args.selector, args.mc))
     elif args.download is not None:
         print(Skin(args.download).download(args.path))
     elif args.base64 is not None:
         print(Skin(args.base64).get_hash())
+    elif args.version is not None:
+        print(__version__)
 
 
 if __name__ == "__main__":

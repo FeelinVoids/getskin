@@ -1,5 +1,5 @@
 # getskin
-![GitHub release (latest by date)](https://img.shields.io/github/v/release/FeelinVoids_/getskin)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/FeelinVoids/getskin)
 
 Python-модуль, позволяющий получать данные о скинах игроков Minecraft.
 

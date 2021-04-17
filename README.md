@@ -1,16 +1,27 @@
 # getskin
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/FeelinVoids_/getskin)
 
-Позволяет получать информацию о скинах игроков Minecraft:
-- Имя
-- UUID
-- base64
-- URL png картинки
-- /give команда для получения головы со скином
+Python-модуль, позволяющий получать данные о скинах игроков Minecraft.
 
-Можно работать как с модулем Python, так и через команды в консоли.
+Также доступен как программа в консоли для быстрого получения данных скина.
 
 ![](https://i.imgur.com/qPk9fr3.png)
+
+## Пример использования в коде
+
+```python
+
+    import getskin
+
+    skin = getskin.Skin.get("FeelinVoids_")
+
+    print(skin.get_uuid())
+    print(skin.get_base64())
+    print(skin.get_username())
+    print(skin.give_head(to="@p", minecraft_version="1.16"))
+
+    skin.download("./test/FeelinVoids_.png")
+```
 
 ## Установка
 

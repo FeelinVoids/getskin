@@ -36,12 +36,12 @@ parser.add_argument("--path", "--p", required=False, default=os.getcwd())
 
 def main():
     def _print_info(name):
-        skin = Skin(name)
+        skin = Skin.get(name)
         print(
-            "Username: "+skin.get_name(),
+            "Username: "+skin.get_username(),
             "UUID: "+skin.get_uuid(),
             "Skin URL: "+skin.get_url(),
-            "base64: "+skin.get_hash(),
+            "base64: "+skin.get_base64(),
             "Head 1.16: "+skin.give_head(minecraft_version="1.16"),
             "Head 1.15: "+skin.give_head(minecraft_version="1.15"),
             "Head 1.12: "+skin.give_head(minecraft_version="1.12"),
@@ -57,11 +57,11 @@ def main():
     if args.info is not None:
         _print_info(args.info)
     elif args.head is not None:
-        print(Skin(args.head).give_head(args.selector, args.mc))
+        print(Skin.get(args.head).give_head(args.selector, args.mc))
     elif args.download is not None:
-        print(Skin(args.download).download(args.path))
+        print(Skin.get(args.download).download(args.path))
     elif args.base64 is not None:
-        print(Skin(args.base64).get_hash())
+        print(Skin.get(args.base64).get_base64())
     elif args.version is not None:
         print(__version__)
 

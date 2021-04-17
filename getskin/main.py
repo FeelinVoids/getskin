@@ -1,13 +1,14 @@
-import base64
 import json
 import os
+import struct
+from base64 import b64decode, b64encode
 from struct import unpack
-from typing import Tuple
+from typing import IO, Optional, Tuple, Union
 
 import requests
 
-GET_ID_URL = "https://api.mojang.com/users/profiles/minecraft/"
-GET_BY_ID_URL = "https://sessionserver.mojang.com/session/minecraft/profile/"
+GET_UUID_URL = "https://api.mojang.com/users/profiles/minecraft/"
+GET_BY_UUID_URL = "https://sessionserver.mojang.com/session/minecraft/profile/"
 
 template_116 = "/give {to} minecraft:player_head{{display:{{Name:\"{{\\\"text\\\":\\\"{name}\\\"}}\"}}, SkullOwner:{{Id:[I;{uuid0},{uuid1},{uuid2},{uuid3}],Properties:{{textures:[{{Value:\"{hash}\"}}]}}}}}} 1"
 template113_115 = "/give {to} minecraft:player_head{{display:{{Name:\"{{\\\"text\\\":\\\"{name}\\\"}}\"}}, SkullOwner: {{Id: \"{uuid}\", Properties: {{textures: [{{Value: \"{hash}\"}}]}}}}}} 1"
@@ -15,107 +16,162 @@ legacy_template = "/give {to} skull 1 3 {{display:{{Name:\"{name}\"}}, SkullOwne
 
 
 class Skin:
-    """ Позволяет получить текстуру и ID по имени, 
-        или имя и текстуру по ID.
+    """ 
+        Объект скина, получаемый по имени пользователя или uuid.
+        Реализует функционал, позволяющий получать имя, uuid,
+        base64, осуществлять проверку формата скина, и скачивать его.
+    """
 
-        Если передан несуществующий ID или имя, бросит `ValueError`
-        с JSON, который прилетел в ответ с сервера.
+    def __init__(self, username: Optional[str] = None,
+                 uuid: Optional[str] = None, base64: Optional[str] = None):
+        self._uuid: str = uuid.replace("-", "") if uuid is not None else None
+        self._username: str = username
+        self._full = None
 
-        Пример использования:
+        if username == uuid == base64:
+            raise ValueError("username == uuid == base64 ==", self._uuid)
 
-        ```
-        skin = Skin("Notch")
-        print(skin.get_uuid()) # UUID
-        print(skin.get_name()) # Имя пользователя
-        print(skin.get_url()) # Ссылка на скин
-        print(skin.get_bytes()) # байты
-        print(skin.get_hash()) # base64
-        # Скачать скин в текущую директорию
-        print(skin.download(os.getcwd())) 
+        self._url: str = None
+        if base64 is not None:
+            data = json.loads(b64decode(base64).decode())
+            self._url = data["textures"]["SKIN"]["url"]
+            try:
+                self._uuid = data["profileId"]
+                self._username = data["profileName"]
+            except:
+                pass
 
-        # Получить команды give для выдачи головы для
-        # разных версий Minecraft:
-        print(skin.give_head(to="@p", minecraft_version="1.16")) 
-        print(skin.give_head(to="@p", minecraft_version="1.15")) 
-        print(skin.give_head(to="@p", minecraft_version="1.12")) 
-        # Команды аналогичны для версий 1.15, 1.14 и 1.13
-        ```
-        """
-
-    def __init__(self, username_or_uuid: str):
-        self.__id: str = None
-        self.__name: str = None
         self.__bytes: bytes = None
-        self.__response: dict = None
 
-        # Это может быть UUID с дефисами. Удаляем их.
-        username_or_uuid = username_or_uuid.replace("-", "")
+    @classmethod
+    def get(cls, data: str):
+        if len(data) <= 16:
+            return Skin.get_by_username(data)
+        elif len(data) <= 32:
+            return Skin.get_by_uuid(data)
+        return Skin.get_by_base64(data)
 
-        # 16 - максимальная длина ника, так что если передано больше,
-        # считаем, что это ID
-        if len(username_or_uuid) > 16:
-            self.__id: str = username_or_uuid
+    @classmethod
+    def get_by_uuid(cls, uuid: str) -> "Skin":
+        """ Получает объект по UUID """
+        return cls(username=None, uuid=uuid, base64=None)
+
+    @classmethod
+    def get_by_username(cls, username: str) -> "Skin":
+        """ Получает объект по имени пользователя """
+        return cls(username=username, uuid=None, base64=None)
+
+    @classmethod
+    def get_by_base64(cls, base64: str) -> "Skin":
+        """ Пытается получить скин по base64. Но обычно
+            единственный случай, когда это может сработать -
+            если хэш получен от API Mojang. """
+        return cls(username=None, uuid=None, base64=base64)
+
+    @staticmethod
+    def resolve_username(username: str) -> str:
+        """ Получает UUID игрока по нику путём обращения к API """
+        return requests.get(GET_UUID_URL+username).json()["id"]
+
+    @staticmethod
+    def resolve_uuid(uuid: str) -> Tuple[str, str, str]:
+        """ Принимает UUID, возвращает `("имя_пользователя",
+            "base64", "url")` """
+        uuid = uuid.replace("-", "")
+        resp = requests.get(GET_BY_UUID_URL+uuid).json()
+        b64 = resp["properties"][0]["value"]
+        data = json.loads(b64decode(b64).decode())
+        return (resp["name"], b64, data["textures"]["SKIN"]["url"])
+
+    @staticmethod
+    def _is_full_format(bytesfilelike: Union[bytes, IO]) -> bool:
+        """ Позволяет определить формат скина.
+
+            Скины бывают 2 форматов: неполные - меньше картинка меньше и
+            не поддерживается второй слой, и полные - картинка
+            квадратная """
+        # https://stackoverflow.com/a/20380514
+        if isinstance(bytesfilelike, bytes):
+            head = bytesfilelike[:24]
         else:
-            self.__name: str = username_or_uuid
+            head = bytesfilelike.read(24)
+        if len(head) != 24:
+            return False
+        check = struct.unpack('>i', head[4:8])[0]
+        if check != 0x0d0a1a0a:
+            return False
+        width, height = struct.unpack('>ii', head[16:24])
+        return height == 64
 
-        # При выдаче головы необходимо определить, был ли получен
-        # скин по UUID, и если был, то назвать её UUID'ом, а не ником
-        self.__get_by: str = username_or_uuid
+    def is_full_format(self) -> bool:
+        if self._full is None:
+            self._full = Skin._is_full_format(self.get_bytes())
+        return self._full
 
     def __repr__(self):
-        if self.__name is None:
-            n = self.__id
+        if self._username is None:
+            n = self._uuid
         else:
-            n = self.__name
+            n = self._username
         return "<Skin of "+n+">"
 
+    def json(self):
+        """ Возвращает все данные скина в формате словаря """
+        return {
+            "uuid": self.get_uuid(),
+            "username": self.get_username(),
+            "base64": self.get_base64(),
+            "hyphenated_uuid": self.get_hyphenated_uuid(),
+            "numerical_uuid": self.get_numerical_uuid(),
+            "url": self.get_url(),
+            "is_full_format": self.is_full_format()
+        }
+
+    @classmethod
+    def from_json(self, json: dict) -> "Skin":
+        """ Переводит dict, полученный методом .json() обратно
+            в объект Skin """
+        skin = Skin(username=json["username"], uuid=json["uuid"],
+                    base64=json["base64"])
+        skin._url = json["url"]
+        skin._full = json["is_full_format"]
+        return skin
+
     def get_uuid(self) -> str:
-        """ Возвращает ID скина
+        """ Возвращает UUID скина
 
             Если объект был получен по имени пользователя, будет
-            произведено обращение к серверу."""
-        if self.__id is None:
-            self.__load_id()
-        return self.__id
+            произведено обращение к API."""
+        if self._uuid is None:
+            self._uuid = self.resolve_username(self._username)
+        return self._uuid
 
-    def __load_id(self):
-        """ Чтобы получить скин, необходимо знать его ID.
-            Если в объект было передано имя пользователя, а не ID,
-            перед получением текстуры необходимо обратиться к серверу
-            и узнать ID."""
-        resp = requests.get(GET_ID_URL+self.__name).json()
-        try:
-            self.__id = resp["id"]
-        except KeyError:
-            raise ValueError(resp)
-
-    def __load_full(self):
-        """ Загрузка имени и текстуры, когда ID уже известен """
-        resp = requests.get(GET_BY_ID_URL+self.get_uuid()).json()
-        self.__name = resp["name"]
-
-        datastr = base64.b64decode(resp["properties"][0]["value"]).decode()
-        self.__response = json.loads(datastr)
-
-    def get_name(self) -> str:
+    def get_username(self) -> str:
         """ Возвращает имя пользователя скина """
-        if self.__name is None:
-            self.__load_full()
-        return self.__name
+        # Если имеем имя пользователя, можно вернуть его. Если не
+        # имеем, значит по-любому имеем UUID. Загружаем.
+        if self._username is None:
+            self._username, _, self._url = self.resolve_uuid(self._uuid)
+        return self._username
 
     def get_url(self) -> str:
         """ Возвращает ссылку на png картинку скина """
-        if self.__response is None:
-            self.__load_full()
-        return self.__response["textures"]["SKIN"]["url"]
+        if self._url is None:
+            # В этом методе происходит обновление self._url
+            uuid = self.get_uuid()
+            self._username, _, self._url = self.resolve_uuid(uuid)
+        return self._url
 
     def get_bytes(self) -> bytes:
-        """ Возвращает байты png картинки скина """
+        """ Возвращает байты png картинки скина
+
+            Байты сохраняются в объекте для быстрого последующего
+            доступа или скачивания картинки. """
         if self.__bytes is None:
             self.__bytes = requests.get(self.get_url()).content
         return self.__bytes
 
-    def download(self, path: str) -> str:
+    def download(self, path: str = ".") -> str:
         """ Скачивает png-картинку скина
 
             `path` - Папка для сохранения. Если пути не существует,
@@ -125,19 +181,23 @@ class Skin:
 
             Получившийся в итоге путь возвращается."""
 
+        # Прогрузим все данные сразу
+        self.get_bytes()
+        path = os.path.abspath(path)
+
         if not path.endswith(".png"):
-            path = os.path.join(path, self.get_name()+".png")
+            path = os.path.join(path, self.get_username()+".png")
 
         with open(path, "wb") as f:
             f.write(self.get_bytes())
 
         return path
 
-    def get_hash(self) -> str:
+    def get_base64(self) -> str:
         """ Возвращает хеш base64 данных скина
 
             (используется в командах `/give` и `/setblock`)"""
-        return base64.b64encode(
+        return b64encode(
             json.dumps(
                 {"textures": {"SKIN": {"url": self.get_url()}}}).encode()
         ).decode()
@@ -146,8 +206,8 @@ class Skin:
         """ Возвращает UUID скина в формате Minecraft 1.16 - в виде
             последовательности из 4 чисел"""
         uuid = self.get_uuid()
-        return (unpack('>i', bytes.fromhex(uuid[x*8:(x+1)*8]))[0]
-                for x in range(4))
+        return tuple(unpack('>i', bytes.fromhex(uuid[x*8:(x+1)*8]))[0]
+                     for x in range(4))
 
     def get_hyphenated_uuid(self) -> str:
         """ Возвращает UUID скина в формате Minecraft ДО 1.16 -
@@ -158,7 +218,8 @@ class Skin:
             uuid[12:16] + "-" + uuid[16:20] + "-" + uuid[20:]
 
     def give_head(self, to: str = "@p",
-                  minecraft_version: str = "1.16") -> str:
+                  minecraft_version: str = "1.16",
+                  name: Optional[str] = None) -> str:
         """ Генерирует команду /give для получения головы со скином.
 
             `to` - Кому выдавать голову, по умолчанию `"@p"`
@@ -171,11 +232,15 @@ class Skin:
                 1.16 - ... 
 
             По умолчанию `"1.16"`"""
+        self.get_url()  # Подгрузка данных, в т.ч. ника
+
+        if name is None:
+            name = self.get_username()
         if minecraft_version.startswith("1.16"):
             return template_116.format(
                 to=to,
-                hash=self.get_hash(),
-                name=self.__get_by,
+                hash=self.get_base64(),
+                name=name,
                 **{"uuid"+str(n): v
                    for n, v in enumerate(self.get_numerical_uuid())}
             )
@@ -183,14 +248,14 @@ class Skin:
                 or minecraft_version.startswith("1.14") \
                 or minecraft_version.startswith("1.13"):
             return template113_115.format(
-                name=self.__get_by,
+                name=name,
                 to=to,
                 uuid=self.get_hyphenated_uuid(),
-                hash=self.get_hash())
+                hash=self.get_base64())
         else:
             return legacy_template.format(
-                name=self.__get_by,
+                name=name,
                 to=to,
                 uuid=self.get_hyphenated_uuid(),
-                hash=self.get_hash()
+                hash=self.get_base64()
             )

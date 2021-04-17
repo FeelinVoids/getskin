@@ -1,56 +1,53 @@
-import getskin
 import os
 import sys
 
+import getskin
 
-# Результат выполнения этого скрипта запишем в файл test.txt
 dirpath = os.path.dirname(os.path.abspath(__file__))
-path = os.path.join(dirpath, "test.txt")
-file = open(path, "w", encoding="utf-8")
 
-default_stdout = sys.stdout
-sys.stdout = file
 
-# Получаем объект скина, с которым будем работать.
-# Вместо ника может быть UUID.
-skin = getskin.Skin("Notch")
+def test_object(skin, filename):
+    path = os.path.join(dirpath, filename+".txt")
+    file = open(path, "w", encoding="utf-8")
+    default_stdout = sys.stdout
+    sys.stdout = file
 
-# Демонстрация всех методов:
-print(
-    # Возвращает UUID в 3-х разных форматах:
-    # - Слитно
-    # - В виде массива из 4-х чисел
-    # - Разделённый дефисами
-    # Подробнее здесь:
-    # https://minecraft.gamepedia.com/Universally_unique_identifier
-    skin.get_uuid(),
-    list(skin.get_numerical_uuid()),
-    skin.get_hyphenated_uuid(),
+    print("is_full_format:", skin.is_full_format())
+    print()
+    print("json:", skin.json())
+    print()
+    print("get_uuid:", skin.get_uuid())
+    print()
+    print("get_username:", skin.get_username())
+    print()
+    print("get_url:", skin.get_url())
+    print()
+    print("get_base64:", skin.get_base64())
+    print()
+    print("get_numerical_uuid:", skin.get_numerical_uuid())
+    print()
+    print("get_hyphenated_uuid:", skin.get_hyphenated_uuid())
+    print()
+    print("give_head (1.16):", skin.give_head(
+          to="@p", minecraft_version="1.16"))
+    print()
+    print("give_head (1.15):", skin.give_head(
+          to="@p", minecraft_version="1.15"))
+    print()
+    print("give_head (1.12):", skin.give_head(
+          to="@p", minecraft_version="1.12"))
+    print()
+    print("get_bytes length:", len(skin.get_bytes()))
+    print()
+    print("download:", skin.download(os.path.join(dirpath, filename+".png")))
 
-    # Возвращает имя пользователя
-    skin.get_name(),
+    file.close()
+    sys.stdout = default_stdout
 
-    # Возвращает ссылку на png файл
-    skin.get_url(),
 
-    # Скачивает и возвращает байты файла
-    skin.get_bytes(),
+test_object(getskin.Skin("Notch"), "__init__")
 
-    # Скачивает файл в переданную первым параметром директорию
-    skin.download(dirpath),
+test_object(getskin.Skin.get_by_uuid("3bea3a289e9b409c84d8a5bcc52299bb"),
+            "get_by_uuid")
 
-    # Возвращает base64 данных скина
-    skin.get_hash(),
-
-    # Получение команды /give для разных версий
-    skin.give_head(to="@p", minecraft_version="1.16"),
-    skin.give_head(to="@p", minecraft_version="1.15"),
-    skin.give_head(to="@p", minecraft_version="1.12"),
-
-    sep="\n\n\n"
-)
-
-file.close()
-sys.stdout = default_stdout
-
-print("Test result:", path)
+test_object(getskin.Skin.get_by_username("FeelinVoids_"), "get_by_username")

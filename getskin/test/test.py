@@ -7,10 +7,15 @@ dirpath = os.path.dirname(os.path.abspath(__file__))
 
 
 def test_object(skin, filename):
-    path = os.path.join(dirpath, filename+".txt")
+    testpath = os.path.join(dirpath, "test_results")
+    if not os.path.exists(testpath):
+        os.makedirs(testpath)
+    path = os.path.join(testpath, filename+".txt")
     file = open(path, "w", encoding="utf-8")
     default_stdout = sys.stdout
     sys.stdout = file
+
+    b64 = skin.get_base64()
 
     print("is_full_format:", skin.is_full_format())
     print()
@@ -22,7 +27,7 @@ def test_object(skin, filename):
     print()
     print("get_url:", skin.get_url())
     print()
-    print("get_base64:", skin.get_base64())
+    print("get_base64:", b64)
     print()
     print("get_numerical_uuid:", skin.get_numerical_uuid())
     print()
@@ -39,7 +44,9 @@ def test_object(skin, filename):
     print()
     print("get_bytes length:", len(skin.get_bytes()))
     print()
-    print("download:", skin.download(os.path.join(dirpath, filename+".png")))
+    print("download:", skin.download(os.path.join(testpath, filename+".png")))
+
+    print("Skin.base64_to_url:", getskin.Skin.base64_to_url(b64))
 
     file.close()
     sys.stdout = default_stdout

@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import json
 
 from getskin.__version__ import __version__
 from getskin.main import Skin
@@ -23,6 +24,7 @@ Examples:
 group = parser.add_mutually_exclusive_group(required=True)
 
 group.add_argument("--info", "--i", help="Get username, UUID and skin URL")
+group.add_argument("--json", "--j", help="Get skin info as JSON")
 group.add_argument("--head", "--h", help="Get /give command of head with skin")
 group.add_argument("--download", "--d", help="Download the skin")
 group.add_argument("--base64", "--b", help="Get base64 hash of skin")
@@ -49,7 +51,10 @@ def main():
         )
 
     if len(sys.argv) == 2 and not sys.argv[1].startswith("-"):
-        _print_info(sys.argv[1])
+        if len(sys.argv[1]) < 32:
+            _print_info(sys.argv[1])
+        else:
+            print(Skin.base64_to_url(sys.argv[1]))
         return
 
     args = parser.parse_args()
@@ -58,6 +63,10 @@ def main():
         _print_info(args.info)
     elif args.head is not None:
         print(Skin.get(args.head).give_head(args.selector, args.mc))
+    elif args.json is not None:
+        print(json.dumps(Skin.get(args.json).json(), indent=4,
+                         ensure_ascii=False,
+                         sort_keys=True))
     elif args.download is not None:
         print(Skin.get(args.download).download(args.path))
     elif args.base64 is not None:

@@ -103,6 +103,11 @@ class Skin:
         width, height = struct.unpack('>ii', head[16:24])
         return height == 64
 
+    @staticmethod
+    def base64_to_url(b64: str) -> str:
+        data = json.loads(b64decode(b64.encode()).decode())
+        return data["textures"]["SKIN"]["url"]
+
     def is_full_format(self) -> bool:
         if self._full is None:
             self._full = Skin._is_full_format(self.get_bytes())
